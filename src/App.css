@@ -1,0 +1,24 @@
+/* src/App.css */
+
+/* Сбрасываем отступы и делаем корневые блоки «100% высоты» */
+html, body, #root {
+  margin: 0;
+  height: 100%;
+}
+
+/* Сам контейнер приложения */
+.App {
+  display: flex;               /* включаем флекс */
+  flex-direction: column;      /* столбиком */
+  align-items: center;         /* по горизонтали по центру */
+  justify-content: center;     /* по вертикали по центру */
+  height: 100%;                /* 100% от #root, который сам 100% viewport */
+  text-align: center;
+}
+
+/* Чтобы элемент select выглядел чуть аккуратнее */
+.App select {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
