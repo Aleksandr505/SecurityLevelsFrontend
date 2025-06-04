@@ -193,6 +193,46 @@ function App() {
     }
   };
 
+    const generateRandomValues = () => {
+        // Пример данных для рандома из тех же опций, что и в селектах
+        const employeeCountOptions = ['lt', 'gt'];
+        const certOptions = ['certified', 'not_certified']; // Обновлено в соответствии с options в CustomSelect
+        const connectionOptions = ['local', 'network']; // Обновлено в соответствии с options в CustomSelect
+
+        // Для чекбокса сотрудников — случайно true/false
+        const randomIsEmployeeChecked = Math.random() < 0.5;
+
+        // Если чекбокс true, employeeCount очищаем, иначе случайно выбираем из вариантов
+        const randomEmployeeCount = employeeCountOptions[Math.floor(Math.random() * employeeCountOptions.length)];
+
+        // Случайный набор категорий (pdType) — случайно выбрать несколько из categories
+        const categories = [
+            'Общедоступные',
+            'Специальные категории',
+            'Биометрические',
+            'Иные'
+        ];
+
+        // Функция для случайного выбора подмножества массива
+        function getRandomSubset(arr) {
+            const result = arr.filter(() => Math.random() > 0.5);
+            return result.length > 0 ? result : [arr[Math.floor(Math.random() * arr.length)]];
+        }
+
+        setPdType(getRandomSubset(categories));
+        setIsEmployee(randomIsEmployeeChecked);
+        setEmployeeCount(randomEmployeeCount);
+
+        // Генерация случайных значений для сертификатов и типа подключения
+        setCertOs(certOptions[Math.floor(Math.random() * certOptions.length)]);
+        setCertApp(certOptions[Math.floor(Math.random() * certOptions.length)]);
+        setConnectionType(connectionOptions[Math.floor(Math.random() * connectionOptions.length)]);
+
+        setError('');
+        setResultCode('');
+        setExplanation('');
+    };
+
   const handleGisContinue = async () => {
     if (!securityLevel || !scale) {
       setErrorGis('Пожалуйста, заполните все поля');
@@ -417,6 +457,21 @@ function App() {
                     Рассчитать
                 </button>
 
+                <button
+                    onClick={generateRandomValues}
+                    style={{...buttonStyle, width: '100%', marginBottom: '1rem'}}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.backgroundColor = '#cdaafe';
+                        e.currentTarget.style.color = '#3a2d5f';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.backgroundColor = '#3a2d5f';
+                        e.currentTarget.style.color = 'white';
+                    }}
+                >
+                    Генерировать
+                </button>
+
                 {resultCode && (
                     <div style={{marginBottom: '1rem'}}>
                         <h3>Результат:</h3>
@@ -434,12 +489,12 @@ function App() {
                           setScreen('home');
                           setShowGisText(false);
                       }}
-                  style={{ ...buttonStyle, marginBottom: '1rem' }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = '#777';
-                    e.currentTarget.style.color = 'white';
-                  }}
-                  onMouseLeave={e => {
+                      style={{...buttonStyle, marginBottom: '1rem'}}
+                      onMouseEnter={e => {
+                          e.currentTarget.style.backgroundColor = '#777';
+                          e.currentTarget.style.color = 'white';
+                      }}
+                      onMouseLeave={e => {
                     e.currentTarget.style.backgroundColor = '#555';
                     e.currentTarget.style.color = 'white';
                   }}
