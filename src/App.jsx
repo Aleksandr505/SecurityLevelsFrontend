@@ -1,16 +1,147 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+
+function CustomSelect({ options, value, onChange, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (ref.current && !ref.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const selectedLabel = options.find(opt => opt.value === value)?.label || placeholder;
+
+  return (
+      <div ref={ref} style={{ position: 'relative', width: '100%' }}>
+        <div
+            onClick={() => setOpen(!open)}
+            style={{
+              padding: '0.7rem',
+              borderRadius: 4,
+              border: '1px solid #555',
+              backgroundColor: '#2c2c3e',
+              color: value ? 'white' : '#999',
+              cursor: 'pointer',
+              userSelect: 'none',
+              boxSizing: 'border-box',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              transition: 'box-shadow 0.3s, border-color 0.3s',
+              fontSize: '1rem',
+            }}
+        >
+          {selectedLabel}
+          <span style={{ marginLeft: 8 }}>{open ? '▲' : '▼'}</span>
+        </div>
+        {open && (
+            <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 4px)',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: '#2c2c3e',
+                  borderRadius: 4,
+                  border: '1px solid #555',
+                  maxHeight: 180,
+                  overflowY: 'auto',
+                  zIndex: 1000,
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                }}
+            >
+              {options.map(opt => (
+                  <div
+                      key={opt.value}
+                      onClick={() => {
+                        onChange(opt.value);
+                        setOpen(false);
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.backgroundColor = '#cdaafe';
+                        e.currentTarget.style.color = '#3a2d5f';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = 'white';
+                      }}
+                      style={{
+                        padding: '0.7rem 1rem',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        color: 'white',
+                        transition: 'background-color 0.3s ease, color 0.3s ease',
+                        fontSize: '1rem',
+                      }}
+                  >
+                    {opt.label}
+                  </div>
+              ))}
+            </div>
+        )}
+      </div>
+  );
+}
+
+function CollapsibleItem({ title, children }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+      <div style={{ marginBottom: '0.5rem', borderRadius: 4, overflow: 'hidden', border: '1px solid #555' }}>
+        <button
+            onClick={() => setOpen(!open)}
+            style={{
+              width: '100%',
+              textAlign: 'left',
+              padding: '0.75rem 1rem',
+              backgroundColor: '#3a2d5f',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              userSelect: 'none',
+            }}
+        >
+          {open ? '▼ ' : '▶ '} {title}
+        </button>
+        {open && (
+            <div style={{ padding: '0.75rem 1rem', backgroundColor: '#2c2c3e', color: 'white', fontSize: '0.9rem', lineHeight: '1.4' }}>
+              {children}
+            </div>
+        )}
+      </div>
+  );
+}
 
 function App() {
-  // Состояния для выбора категорий ПД, количества субъектов, пояснения, ошибки и сертификаций
+  const [screen, setScreen] = useState('home');
+
+  // ПД состояния
   const [pdType, setPdType] = useState([]);
   const [employeeCount, setEmployeeCount] = useState('');
+  const [certOs, setCertOs] = useState('');
+  const [certApp, setCertApp] = useState('');
+  const [connectionType, setConnectionType] = useState('');
   const [resultCode, setResultCode] = useState('');
   const [explanation, setExplanation] = useState('');
   const [error, setError] = useState('');
-  const [certOs, setCertOs] = useState('');
-  const [certApp, setCertApp] = useState('');
 
-  // Список категорий персональных данных
+  // ГИС состояния
+  const [securityLevel, setSecurityLevel] = useState('');
+  const [scale, setScale] = useState('');
+  const [errorGis, setErrorGis] = useState('');
+  const [showGisText, setShowGisText] = useState(false);
+  const [gisProtectClass, setGisProtectClass] = useState(null);
+  const [gisMeasures, setGisMeasures] = useState({});
+
   const categories = [
     'Общедоступные',
     'Специальные категории',
@@ -18,11 +149,17 @@ function App() {
     'Иные'
   ];
 
-  // Функция отправки данных на сервер для расчета уровня угроз
+  const toggleCategory = (category) => {
+    setPdType(prev =>
+        prev.includes(category)
+            ? prev.filter(c => c !== category)
+            : [...prev, category]
+    );
+  };
+
   const calculateResult = async () => {
-    if (pdType.length && employeeCount && certOs && certApp) {
+    if (pdType.length && employeeCount && certOs && certApp && connectionType) {
       try {
-        // Очистка предыдущих ошибок и результатов
         setError('');
         setExplanation('');
         setResultCode('');
@@ -30,13 +167,11 @@ function App() {
         // Отправка POST-запроса на backend
         const response = await fetch('http://localhost:8080/api/level', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             certOs,
             certApp,
-            network: "network",
+            network: connectionType,
             number: employeeCount,
             selectedOptions: pdType
           })
@@ -44,11 +179,8 @@ function App() {
 
         const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.reason || `Ошибка сервера: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(data.reason || `Ошибка сервера: ${response.status}`);
 
-        // Установка результата и пояснения
         setResultCode(data.maxLevel);
         setExplanation(data.reason);
       } catch (e) {
@@ -59,124 +191,373 @@ function App() {
     }
   };
 
-  // Функция переключения выбора категории ПДн (мультиселект)
-  const toggleCategory = (category) => {
-    setPdType(prev =>
-        prev.includes(category)
-            ? prev.filter(c => c !== category)   // удаление, если уже выбрано
-            : [...prev, category]    // добавление в список
-    );
+  const handleGisContinue = async () => {
+    if (!securityLevel || !scale) {
+      setErrorGis('Пожалуйста, заполните все поля');
+      setShowGisText(false);
+      return;
+    }
+
+      try {
+          // Отправка POST-запроса на backend
+          const response = await fetch('http://localhost:8080/api/gis', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                  level: parseInt(securityLevel),
+                  scale: scale,
+              })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+              throw new Error(data.reason || `Ошибка сервера: ${response.status}`);
+          }
+
+          setGisProtectClass(data.protectClass);
+          setGisMeasures(data.measures || {});
+          setShowGisText(true);
+      } catch (e) {
+          setErrorGis(e.message || 'Ошибка при отправке запроса');
+          setShowGisText(false);
+      }
   };
 
+  const gisChapters = [
+    { id: 'iaf', title: 'I. Идентификация и аутентификация субъектов доступа и объектов доступа (ИАФ)', content: 'Описание раздела ИАФ...' },
+    { id: 'upd', title: 'II. Управление доступом субъектов доступа к объектам доступа (УПД)', content: 'Описание раздела УПД...' },
+    { id: 'ops', title: 'III. Ограничение программной среды (ОПС)', content: 'Описание раздела ОПС...' },
+    { id: 'zni', title: 'IV. Защита машинных носителей информации (ЗНИ)', content: 'Описание раздела ЗНИ...' },
+    { id: 'rsb', title: 'V. Регистрация событий безопасности (РСБ)', content: 'Описание раздела РСБ...' },
+    { id: 'avz', title: 'VI. Антивирусная защита (АВЗ)', content: 'Описание раздела АВЗ...' },
+    { id: 'sov', title: 'VII. Обнаружение вторжений (СОВ)', content: 'Описание раздела СОВ...' },
+    { id: 'anz', title: 'VIII. Контроль (анализ) защищенности информации (АНЗ)', content: 'Описание раздела АНЗ...' },
+  ];
+
   return (
-      <div style={{
-        display: 'flex',
-        padding: '2rem 6rem',
-        fontFamily: 'sans-serif',
-        backgroundColor: '#1e1e1e',
-        color: 'white',
-        minHeight: '100vh',
-        marginTop: '1rem'
-      }}>
-        <div style={{ flex: 1, maxWidth: '600px' }}>
-          <h1 style={{ marginBottom: '2rem' }}>Проверка уровня угроз</h1>
-
-          <div style={{ marginBottom: '2rem' }}>
-            <label>Тип персональных данных:</label><br />
-            <div style={{ marginTop: '0.5rem' }}>
-              {categories.map(category => (
-                  <label key={category} style={{ display: 'block', marginBottom: '0.5rem' }}>
-                    <input
-                        type="checkbox"
-                        value={category}
-                        checked={pdType.includes(category)}
-                        onChange={() => toggleCategory(category)}
-                        style={{ marginRight: '0.5rem' }}
-                    />
-                    {category}
-                  </label>
-              ))}
+      <div
+          style={{
+            backgroundColor: '#1e1e1e',
+            minHeight: '100vh',
+            width: '100vw',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: 'white',
+            padding: '2rem',
+            fontFamily: 'sans-serif',
+            textAlign: 'center',
+            boxSizing: 'border-box',
+          }}
+      >
+        {screen === 'home' && (
+            <div
+                style={{
+                  width: '100%',
+                  height: '100vh',
+                  backgroundColor: '#1e1e1e',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  color: 'white',
+                  padding: '0 2rem',
+                  boxSizing: 'border-box',
+                }}
+            >
+              <h1 style={{ marginBottom: '2rem', width: '100%', maxWidth: '600px', fontSize: '2.5rem', fontWeight: 'bold' }}>
+                Выберите модуль
+              </h1>
+              <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', width: '100%', maxWidth: '600px' }}>
+                <button
+                    onClick={() => setScreen('pd')}
+                    style={buttonStyle}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.backgroundColor = '#cdaafe';
+                      e.currentTarget.style.color = '#3a2d5f';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.backgroundColor = '#3a2d5f';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                >
+                  Уровни зависимости ПД
+                </button>
+                <button
+                    onClick={() => setScreen('gis')}
+                    style={buttonStyle}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.backgroundColor = '#cdaafe';
+                      e.currentTarget.style.color = '#3a2d5f';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.backgroundColor = '#3a2d5f';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                >
+                  Класс защищенности ГИС
+                </button>
+              </div>
             </div>
-          </div>
+        )}
 
-          <div style={{ marginBottom: '2rem' }}>
-            <label>Количество субъектов:</label><br />
-            <select
-                value={employeeCount}
-                onChange={e => setEmployeeCount(e.target.value)}
-                style={{ padding: '0.8rem', width: '100%', marginTop: '0.5rem' }}
-            >
-              <option value="">— выберите —</option>
-              <option value="lt">До 100 тыс.</option>
-              <option value="gt">Более 100 тыс.</option>
-            </select>
-          </div>
+        {screen === 'pd' && (
+            <div style={{ maxWidth: '600px', width: '100%', textAlign: 'left' }}>
+              <button
+                  onClick={() => setScreen('home')}
+                  style={{ ...buttonStyle, marginBottom: '1rem' }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = '#777';
+                    e.currentTarget.style.color = 'white';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = '#555';
+                    e.currentTarget.style.color = 'white';
+                  }}
+              >
+                ← Назад
+              </button>
 
-          <div style={{marginBottom: '2rem'}}>
-            <label>Сертификация ОС:</label><br/>
-            <select
-                value={certOs}
-                onChange={e => setCertOs(e.target.value)}
-                style={{padding: '0.8rem', width: '100%', marginTop: '0.5rem'}}
-            >
-              <option value="">— выберите —</option>
-              <option value="certified">Сертифицирована</option>
-              <option value="not_certified">Не сертифицирована</option>
-            </select>
-          </div>
+              <h2 style={{ marginBottom: '1.5rem' }}>Проверка уровня угроз</h2>
 
-          <div style={{marginBottom: '2rem'}}>
-            <label>Сертификация приложения:</label><br/>
-            <select
-                value={certApp}
-                onChange={e => setCertApp(e.target.value)}
-                style={{padding: '0.8rem', width: '100%', marginTop: '0.5rem'}}
-            >
-              <option value="">— выберите —</option>
-              <option value="certified">Сертифицировано</option>
-              <option value="not_certified">Не сертифицировано</option>
-            </select>
-          </div>
-
-          <button
-              onClick={calculateResult}
-              style={{padding: '0.8rem 1.5rem', fontSize: '1rem', marginTop: '1rem'}}
-          >
-            Рассчитать
-          </button>
-
-          {error && (
-              <div style={{color: 'red', marginTop: '1rem', fontWeight: 'bold' }}>
-                {error}
+              <div style={{ marginBottom: '1rem' }}>
+                <label>Тип персональных данных:</label><br />
+                {categories.map(category => (
+                    <label key={category} style={{ display: 'block', margin: '4px 0', cursor: 'pointer' }}>
+                      <input
+                          type="checkbox"
+                          checked={pdType.includes(category)}
+                          onChange={() => toggleCategory(category)}
+                          style={{ marginRight: '0.5rem', cursor: 'pointer' }}
+                      />
+                      {category}
+                    </label>
+                ))}
               </div>
-          )}
 
-          {resultCode && (
-              <div style={{ marginTop: '2rem', fontSize: '1.2rem', fontWeight: 'bold' }}>
-                Уровень угрозы: {resultCode}
+              <div style={{ marginBottom: '1rem' }}>
+                <label>Количество субъектов:</label><br />
+                <CustomSelect
+                    value={employeeCount}
+                    onChange={setEmployeeCount}
+                    placeholder="— выберите —"
+                    options={[
+                      { value: '', label: '— выберите —' },
+                      { value: 'lt', label: 'До 100 тыс.' },
+                      { value: 'gt', label: 'Более 100 тыс.' },
+                    ]}
+                />
               </div>
-          )}
-        </div>
 
-        {resultCode && explanation && (
-            <div style={{
-              flex: 1,
-              marginLeft: '4rem',
-              padding: '1rem',
-              backgroundColor: '#333',
-              borderRadius: '12px',
-              alignSelf: 'flex-start',
-              marginTop: '3.5rem',
-              maxWidth: '500px'
-            }}>
-              <h2 style={{ marginBottom: '1rem' }}>Пояснение</h2>
-              <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-                <strong>{resultCode}:</strong> {explanation}
-              </p>
+              <div style={{ marginBottom: '1rem' }}>
+                <label>Наличие сертификата безопасности ОС:</label><br />
+                <CustomSelect
+                    value={certOs}
+                    onChange={setCertOs}
+                    placeholder="— выберите —"
+                    options={[
+                      { value: '', label: '— выберите —' },
+                      { value: 'certified', label: 'Сертифицировано' },
+                      { value: 'not_certified', label: 'Не сертифицировано' },
+                    ]}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label>Наличие сертификата безопасности прикладного ПО:</label><br />
+                <CustomSelect
+                    value={certApp}
+                    onChange={setCertApp}
+                    placeholder="— выберите —"
+                    options={[
+                      { value: '', label: '— выберите —' },
+                      { value: 'certified', label: 'Сертифицировано' },
+                      { value: 'not_certified', label: 'Не сертифицировано' },
+                    ]}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label>Тип подключения к сети:</label><br />
+                <CustomSelect
+                    value={connectionType}
+                    onChange={setConnectionType}
+                    placeholder="— выберите —"
+                    options={[
+                      { value: '', label: '— выберите —' },
+                      { value: 'local', label: 'Локальный ' },
+                      { value: 'network', label: 'Сетевой' },
+                    ]}
+                />
+              </div>
+
+              {error && (
+                  <div style={{ color: 'red', marginBottom: '1rem' }}>
+                    {error}
+                  </div>
+              )}
+
+              <button
+                  onClick={calculateResult}
+                  style={{ ...buttonStyle, width: '100%', marginBottom: '1rem' }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = '#cdaafe';
+                    e.currentTarget.style.color = '#3a2d5f';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = '#3a2d5f';
+                    e.currentTarget.style.color = 'white';
+                  }}
+              >
+                Рассчитать
+              </button>
+
+              {resultCode && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <h3>Результат:</h3>
+                    <p>Максимальный уровень: <strong>{resultCode}</strong></p>
+                    {explanation && <p>{explanation}</p>}
+                  </div>
+              )}
+            </div>
+        )}
+
+        {screen === 'gis' && (
+            <div style={{ maxWidth: '600px', width: '100%', textAlign: 'left' }}>
+              <button
+                  onClick={() => {
+                    setScreen('home');
+                    setShowGisText(false);
+                  }}
+                  style={{ ...buttonStyle, marginBottom: '1rem' }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = '#777';
+                    e.currentTarget.style.color = 'white';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = '#555';
+                    e.currentTarget.style.color = 'white';
+                  }}
+              >
+                ← Назад
+              </button>
+
+              <h2 style={{ marginBottom: '1.5rem' }}>Определение класса защищенности ГИС</h2>
+
+              {!showGisText ? (
+                  <>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label>Уровень защищенности:</label><br />
+                      <CustomSelect
+                          value={securityLevel}
+                          onChange={setSecurityLevel}
+                          placeholder="— выберите —"
+                          options={[
+                            { value: '', label: '— выберите —' },
+                            { value: '1', label: '1' },
+                            { value: '2', label: '2' },
+                            { value: '3', label: '3' },
+                          ]}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label>Масштаб ГИС:</label><br />
+                      <CustomSelect
+                          value={scale}
+                          onChange={setScale}
+                          placeholder="— выберите —"
+                          options={[
+                            { value: '', label: '— выберите —' },
+                            { value: 'OBJECT', label: 'Объектный' },
+                            { value: 'REGIONAL', label: 'Региональный' },
+                            { value: 'FEDERAL', label: 'Федеральный' },
+                          ]}
+                      />
+                    </div>
+
+                    {errorGis && (
+                        <div style={{ color: 'red', marginBottom: '1rem' }}>
+                          {errorGis}
+                        </div>
+                    )}
+
+                    <button
+                        onClick={handleGisContinue}
+                        style={{ ...buttonStyle, width: '100%', marginBottom: '1rem' }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.backgroundColor = '#cdaafe';
+                          e.currentTarget.style.color = '#3a2d5f';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.backgroundColor = '#3a2d5f';
+                          e.currentTarget.style.color = 'white';
+                        }}
+                    >
+                      Продолжить
+                    </button>
+                  </>
+              ) : (
+                  <>
+                    <button
+                        onClick={() => setShowGisText(false)}
+                        style={{ ...buttonStyle, marginBottom: '1rem', backgroundColor: '#777' }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.backgroundColor = '#555';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.backgroundColor = '#777';
+                        }}
+                    >
+                      ← Назад к форме
+                    </button>
+
+                      {gisProtectClass !== null && (
+                          <div style={{ marginBottom: '1.5rem' }}>
+                              <h3>Класс защищенности: {gisProtectClass}</h3>
+                          </div>
+                      )}
+
+                      {Object.keys(gisMeasures).length > 0 && (
+                          <div>
+                              <h3>Требуемые меры защиты:</h3>
+                              {Object.entries(gisMeasures).map(([section, items]) => (
+                                  <div key={section} style={{ marginBottom: '20px' }}>
+                                      <h4>{section}</h4>
+                                      <ul>
+                                          {items.map((item) => (
+                                              <li key={item.code}>
+                                                  <strong>{item.code}:</strong> {item.text}
+                                                  <br />
+                                                  <em>Уровни: {item.levels.join(', ')}</em>
+                                              </li>
+                                          ))}
+                                      </ul>
+                                  </div>
+                              ))}
+                          </div>
+                      )}
+                  </>
+              )}
             </div>
         )}
       </div>
   );
 }
+
+const buttonStyle = {
+  backgroundColor: '#3a2d5f',
+  border: 'none',
+  borderRadius: 4,
+  color: 'white',
+  padding: '0.75rem 1.5rem',
+  cursor: 'pointer',
+  fontSize: '1rem',
+  fontWeight: 'bold',
+  transition: 'background-color 0.3s ease, color 0.3s ease',
+  userSelect: 'none',
+};
 
 export default App;
