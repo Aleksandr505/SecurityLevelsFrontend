@@ -130,6 +130,7 @@ function App() {
   const [certOs, setCertOs] = useState('');
   const [certApp, setCertApp] = useState('');
   const [connectionType, setConnectionType] = useState('');
+  const [isEmployee, setIsEmployee] = useState(false);
   const [resultCode, setResultCode] = useState('');
   const [explanation, setExplanation] = useState('');
   const [error, setError] = useState('');
@@ -165,15 +166,16 @@ function App() {
         setResultCode('');
 
         // Отправка POST-запроса на backend
-        const response = await fetch('http://localhost:8080/api/level', {
+        const response = await fetch('/api/level', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            certOs,
-            certApp,
+            certOs: certOs,
+            certApp: certApp,
             network: connectionType,
             number: employeeCount,
-            selectedOptions: pdType
+            selectedOptions: pdType,
+            isEmployee: isEmployee
           })
         });
 
@@ -200,7 +202,7 @@ function App() {
 
       try {
           // Отправка POST-запроса на backend
-          const response = await fetch('http://localhost:8080/api/gis', {
+          const response = await fetch('/api/gis', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({
@@ -223,17 +225,6 @@ function App() {
           setShowGisText(false);
       }
   };
-
-  const gisChapters = [
-    { id: 'iaf', title: 'I. Идентификация и аутентификация субъектов доступа и объектов доступа (ИАФ)', content: 'Описание раздела ИАФ...' },
-    { id: 'upd', title: 'II. Управление доступом субъектов доступа к объектам доступа (УПД)', content: 'Описание раздела УПД...' },
-    { id: 'ops', title: 'III. Ограничение программной среды (ОПС)', content: 'Описание раздела ОПС...' },
-    { id: 'zni', title: 'IV. Защита машинных носителей информации (ЗНИ)', content: 'Описание раздела ЗНИ...' },
-    { id: 'rsb', title: 'V. Регистрация событий безопасности (РСБ)', content: 'Описание раздела РСБ...' },
-    { id: 'avz', title: 'VI. Антивирусная защита (АВЗ)', content: 'Описание раздела АВЗ...' },
-    { id: 'sov', title: 'VII. Обнаружение вторжений (СОВ)', content: 'Описание раздела СОВ...' },
-    { id: 'anz', title: 'VIII. Контроль (анализ) защищенности информации (АНЗ)', content: 'Описание раздела АНЗ...' },
-  ];
 
   return (
       <div
@@ -304,133 +295,145 @@ function App() {
         )}
 
         {screen === 'pd' && (
-            <div style={{ maxWidth: '600px', width: '100%', textAlign: 'left' }}>
-              <button
-                  onClick={() => setScreen('home')}
-                  style={{ ...buttonStyle, marginBottom: '1rem' }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = '#777';
-                    e.currentTarget.style.color = 'white';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.backgroundColor = '#555';
-                    e.currentTarget.style.color = 'white';
-                  }}
-              >
-                ← Назад
-              </button>
+            <div style={{maxWidth: '600px', width: '100%', textAlign: 'left'}}>
+                <button
+                    onClick={() => setScreen('home')}
+                    style={{...buttonStyle, marginBottom: '1rem'}}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.backgroundColor = '#777';
+                        e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.backgroundColor = '#555';
+                        e.currentTarget.style.color = 'white';
+                    }}
+                >
+                    ← Назад
+                </button>
 
-              <h2 style={{ marginBottom: '1.5rem' }}>Проверка уровня угроз</h2>
+                <h2 style={{marginBottom: '1.5rem'}}>Проверка уровня угроз</h2>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label>Тип персональных данных:</label><br />
-                {categories.map(category => (
-                    <label key={category} style={{ display: 'block', margin: '4px 0', cursor: 'pointer' }}>
-                      <input
-                          type="checkbox"
-                          checked={pdType.includes(category)}
-                          onChange={() => toggleCategory(category)}
-                          style={{ marginRight: '0.5rem', cursor: 'pointer' }}
-                      />
-                      {category}
+                <div style={{marginBottom: '1rem'}}>
+                    <label>Тип персональных данных:</label><br/>
+                    {categories.map(category => (
+                        <label key={category} style={{display: 'block', margin: '4px 0', cursor: 'pointer'}}>
+                            <input
+                                type="checkbox"
+                                checked={pdType.includes(category)}
+                                onChange={() => toggleCategory(category)}
+                                style={{marginRight: '0.5rem', cursor: 'pointer'}}
+                            />
+                            {category}
+                        </label>
+                    ))}
+                </div>
+
+                <div style={{marginBottom: '1rem'}}>
+                    <label>Количество субъектов:</label><br/>
+                    <CustomSelect
+                        value={employeeCount}
+                        onChange={setEmployeeCount}
+                        placeholder="— выберите —"
+                        options={[
+                            {value: '', label: '— выберите —'},
+                            {value: 'lt', label: 'До 100 тыс.'},
+                            {value: 'gt', label: 'Более 100 тыс.'},
+                        ]}
+                    />
+                </div>
+
+                <div style={{marginBottom: '1rem'}}>
+                    <label>Наличие сертификата безопасности ОС:</label><br/>
+                    <CustomSelect
+                        value={certOs}
+                        onChange={setCertOs}
+                        placeholder="— выберите —"
+                        options={[
+                            {value: '', label: '— выберите —'},
+                            {value: 'certified', label: 'Сертифицировано'},
+                            {value: 'not_certified', label: 'Не сертифицировано'},
+                        ]}
+                    />
+                </div>
+
+                <div style={{marginBottom: '1rem'}}>
+                    <label>Наличие сертификата безопасности прикладного ПО:</label><br/>
+                    <CustomSelect
+                        value={certApp}
+                        onChange={setCertApp}
+                        placeholder="— выберите —"
+                        options={[
+                            {value: '', label: '— выберите —'},
+                            {value: 'certified', label: 'Сертифицировано'},
+                            {value: 'not_certified', label: 'Не сертифицировано'},
+                        ]}
+                    />
+                </div>
+
+                <div style={{marginBottom: '1rem'}}>
+                    <label>Тип подключения к сети:</label><br/>
+                    <CustomSelect
+                        value={connectionType}
+                        onChange={setConnectionType}
+                        placeholder="— выберите —"
+                        options={[
+                            {value: '', label: '— выберите —'},
+                            {value: 'local', label: 'Локальный '},
+                            {value: 'network', label: 'Сетевой'},
+                        ]}
+                    />
+                </div>
+
+                <div style={{marginBottom: '1rem'}}>
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={isEmployee}
+                            onChange={(e) => setIsEmployee(e.target.checked)}
+                            style={{marginRight: '0.5rem'}}
+                        />
+                        Является сотрудником организации
                     </label>
-                ))}
-              </div>
+                </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label>Количество субъектов:</label><br />
-                <CustomSelect
-                    value={employeeCount}
-                    onChange={setEmployeeCount}
-                    placeholder="— выберите —"
-                    options={[
-                      { value: '', label: '— выберите —' },
-                      { value: 'lt', label: 'До 100 тыс.' },
-                      { value: 'gt', label: 'Более 100 тыс.' },
-                    ]}
-                />
-              </div>
+                {error && (
+                    <div style={{color: 'red', marginBottom: '1rem'}}>
+                        {error}
+                    </div>
+                )}
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label>Наличие сертификата безопасности ОС:</label><br />
-                <CustomSelect
-                    value={certOs}
-                    onChange={setCertOs}
-                    placeholder="— выберите —"
-                    options={[
-                      { value: '', label: '— выберите —' },
-                      { value: 'certified', label: 'Сертифицировано' },
-                      { value: 'not_certified', label: 'Не сертифицировано' },
-                    ]}
-                />
-              </div>
+                <button
+                    onClick={calculateResult}
+                    style={{...buttonStyle, width: '100%', marginBottom: '1rem'}}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.backgroundColor = '#cdaafe';
+                        e.currentTarget.style.color = '#3a2d5f';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.backgroundColor = '#3a2d5f';
+                        e.currentTarget.style.color = 'white';
+                    }}
+                >
+                    Рассчитать
+                </button>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label>Наличие сертификата безопасности прикладного ПО:</label><br />
-                <CustomSelect
-                    value={certApp}
-                    onChange={setCertApp}
-                    placeholder="— выберите —"
-                    options={[
-                      { value: '', label: '— выберите —' },
-                      { value: 'certified', label: 'Сертифицировано' },
-                      { value: 'not_certified', label: 'Не сертифицировано' },
-                    ]}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label>Тип подключения к сети:</label><br />
-                <CustomSelect
-                    value={connectionType}
-                    onChange={setConnectionType}
-                    placeholder="— выберите —"
-                    options={[
-                      { value: '', label: '— выберите —' },
-                      { value: 'local', label: 'Локальный ' },
-                      { value: 'network', label: 'Сетевой' },
-                    ]}
-                />
-              </div>
-
-              {error && (
-                  <div style={{ color: 'red', marginBottom: '1rem' }}>
-                    {error}
-                  </div>
-              )}
-
-              <button
-                  onClick={calculateResult}
-                  style={{ ...buttonStyle, width: '100%', marginBottom: '1rem' }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = '#cdaafe';
-                    e.currentTarget.style.color = '#3a2d5f';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.backgroundColor = '#3a2d5f';
-                    e.currentTarget.style.color = 'white';
-                  }}
-              >
-                Рассчитать
-              </button>
-
-              {resultCode && (
-                  <div style={{ marginBottom: '1rem' }}>
-                    <h3>Результат:</h3>
-                    <p>Максимальный уровень: <strong>{resultCode}</strong></p>
-                    {explanation && <p>{explanation}</p>}
-                  </div>
-              )}
+                {resultCode && (
+                    <div style={{marginBottom: '1rem'}}>
+                        <h3>Результат:</h3>
+                        <p>Максимальный уровень: <strong>{resultCode}</strong></p>
+                        {explanation && <p>{explanation}</p>}
+                    </div>
+                )}
             </div>
         )}
 
-        {screen === 'gis' && (
-            <div style={{ maxWidth: '600px', width: '100%', textAlign: 'left' }}>
-              <button
-                  onClick={() => {
-                    setScreen('home');
-                    setShowGisText(false);
-                  }}
+          {screen === 'gis' && (
+              <div style={{maxWidth: '600px', width: '100%', textAlign: 'left'}}>
+                  <button
+                      onClick={() => {
+                          setScreen('home');
+                          setShowGisText(false);
+                      }}
                   style={{ ...buttonStyle, marginBottom: '1rem' }}
                   onMouseEnter={e => {
                     e.currentTarget.style.backgroundColor = '#777';
