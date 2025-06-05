@@ -1,22 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 function CustomSelect({ options, value, onChange, placeholder }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+    // Управляет состоянием: открыт ли выпадающий список
+    const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (ref.current && !ref.current.contains(event.target)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+    // Ссылка на DOM-элемент компонента (нужна для определения кликов вне его)
+    const ref = useRef(null);
 
-  const selectedLabel = options.find(opt => opt.value === value)?.label || placeholder;
+    useEffect(() => {
+        // Обработчик клика вне компонента — закрывает список
+        function handleClickOutside(event) {
+            if (ref.current && !ref.current.contains(event.target)) {
+                setOpen(false);
+            }
+        }
+
+        // Назначение обработчика при монтировании компонента
+        document.addEventListener("mousedown", handleClickOutside);
+
+        // Удаление обработчика при размонтировании компонента
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []); // Эффект выполняется только один раз при инициализации
+
+// Определяет, что отображать в поле селекта: метку выбранного значения или placeholder
+    const selectedLabel = options.find(opt => opt.value === value)?.label || placeholder;
 
   return (
       <div ref={ref} style={{ position: 'relative', width: '100%' }}>
@@ -91,10 +100,12 @@ function CustomSelect({ options, value, onChange, placeholder }) {
 }
 
 function CollapsibleItem({ title, children }) {
+    // Состояние: открыт ли блок
   const [open, setOpen] = useState(false);
 
   return (
       <div style={{ marginBottom: '0.5rem', borderRadius: 4, overflow: 'hidden', border: '1px solid #555' }}>
+          {/* Заголовок, по клику разворачивает или сворачивает содержимое */}
         <button
             onClick={() => setOpen(!open)}
             style={{
@@ -124,33 +135,34 @@ function CollapsibleItem({ title, children }) {
 function App() {
   const [screen, setScreen] = useState('home');
 
-  // ПД состояния
-  const [pdType, setPdType] = useState([]);
-  const [employeeCount, setEmployeeCount] = useState('');
-  const [certOs, setCertOs] = useState('');
-  const [certApp, setCertApp] = useState('');
-  const [connectionType, setConnectionType] = useState('');
-  const [isEmployee, setIsEmployee] = useState(false);
-  const [resultCode, setResultCode] = useState('');
-  const [explanation, setExplanation] = useState('');
-  const [pdMeasures, setPdMeasures] = useState({});
-  const [error, setError] = useState('');
+    const [pdType, setPdType] = useState([]); // Выбранные категории ПД
+    const [employeeCount, setEmployeeCount] = useState(''); // Кол-во субъектов
+    const [isEmployee, setIsEmployee] = useState(false); // Флаг "Сотрудники"
+    const [certOs, setCertOs] = useState(''); // Сертификация ОС
+    const [certApp, setCertApp] = useState(''); // Сертификация ПО
+    const [connectionType, setConnectionType] = useState(''); // Тип подключения
+    const [resultCode, setResultCode] = useState(''); // Результат расчета
+    const [pdMeasures, setPdMeasures] = useState({}); // меры защиты
+    const [explanation, setExplanation] = useState(''); // Пояснение к результату
+    const [error, setError] = useState(''); // Ошибка при расчете
 
-  // ГИС состояния
-  const [securityLevel, setSecurityLevel] = useState('');
-  const [scale, setScale] = useState('');
-  const [errorGis, setErrorGis] = useState('');
-  const [showGisText, setShowGisText] = useState(false);
-  const [gisProtectClass, setGisProtectClass] = useState(null);
-  const [gisMeasures, setGisMeasures] = useState({});
+    // --- Состояния для модуля "ГИС" ---
+    const [securityLevel, setSecurityLevel] = useState(''); // Уровень защищенности
+    const [scale, setScale] = useState(''); // Масштаб ГИС
+    const [errorGis, setErrorGis] = useState(''); // Ошибка в ГИС-форме
+    const [showGisText, setShowGisText] = useState(false); // Показ результатов ГИС
+    const [gisProtectClass, setGisProtectClass] = useState(null); // Класс защищенности
+    const [gisMeasures, setGisMeasures] = useState({}); // Требуемые меры
 
-  const categories = [
-    'Общедоступные',
-    'Специальные категории',
-    'Биометрические',
-    'Иные'
-  ];
+    // Список возможных категорий персональных данных
+    const categories = [
+        'Общедоступные',
+        'Специальные категории',
+        'Биометрические',
+        'Иные'
+    ];
 
+    // Переключение выбора категории ПД (вкл/выкл)
   const toggleCategory = (category) => {
     setPdType(prev =>
         prev.includes(category)
@@ -159,6 +171,7 @@ function App() {
     );
   };
 
+    // Расчет уровня угроз (ПД): отправка данных на backend
   const calculateResult = async () => {
     if (pdType.length && employeeCount && certOs && certApp && connectionType) {
       try {
@@ -234,6 +247,7 @@ function App() {
         setPdMeasures('');
     };
 
+    // обработка gis
   const handleGisContinue = async () => {
     if (!securityLevel || !scale) {
       setErrorGis('Пожалуйста, заполните все поля');
@@ -269,6 +283,7 @@ function App() {
       }
   };
 
+    // Разметка экрана
     return (
         <div
             style={{
