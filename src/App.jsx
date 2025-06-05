@@ -319,15 +319,16 @@ function App() {
                         Выберите модуль
                     </h1>
                     <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', width: '100%', maxWidth: '600px' }}>
+                        {/* Кнопка выбора модуля */}
                         <button
-                            onClick={() => setScreen('pd')}
-                            style={buttonStyle}
+                            onClick={() => setScreen('pd')}// При клике вызываем функцию setScreen, меняя экран на 'pd'
+                            style={buttonStyle}// Применяем заранее объявленный стиль для кнопки
                             onMouseEnter={e => {
                                 e.currentTarget.style.backgroundColor = '#cdaafe';
                                 e.currentTarget.style.color = '#3a2d5f';
                             }}
                             onMouseLeave={e => {
-                                e.currentTarget.style.backgroundColor = '#3a2d5f';
+                                e.currentTarget.style.backgroundColor = '#3a2d5f';// Возвращаем фон к темно-фиолетовому
                                 e.currentTarget.style.color = 'white';
                             }}
                         >
@@ -406,8 +407,10 @@ function App() {
                                     ))}
                                 </div>
 
+                                {/* Контейнер с отступом снизу */}
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label>Количество субъектов:</label><br/>
+                                    {/* Кастомный селект (выпадающий список) */}
                                     <CustomSelect
                                         value={employeeCount}
                                         onChange={setEmployeeCount}
@@ -419,26 +422,27 @@ function App() {
                                         ]}
                                     />
                                 </div>
-
+                                {/* Метка для выбора наличия сертификата безопасности ОС */}
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label>Наличие сертификата безопасности ОС:</label><br/>
+                                    {/* Кастомный селект для выбора значения */}
                                     <CustomSelect
-                                        value={certOs}
-                                        onChange={setCertOs}
-                                        placeholder="— выберите —"
-                                        options={[
-                                            { value: '', label: '— выберите —' },
+                                        value={certOs}// Текущее выбранное значение (состояние)
+                                        onChange={setCertOs}// Функция для обновления состояния при выборе нового значения
+                                        placeholder="— выберите —"// Текст-подсказка до выбора
+                                        options={[// Варианты выбора
+                                            { value: '', label: '— выберите —' },// Пустой вариант, чтобы ничего не было выбрано
                                             { value: 'certified', label: 'Сертифицировано' },
                                             { value: 'not_certified', label: 'Не сертифицировано' },
                                         ]}
                                     />
                                 </div>
-
+                                {/* Аналогичный блок для сертификата прикладного ПО */}
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label>Наличие сертификата безопасности прикладного ПО:</label><br/>
                                     <CustomSelect
-                                        value={certApp}
-                                        onChange={setCertApp}
+                                        value={certApp}// Выбранное значение для сертификата ПО
+                                        onChange={setCertApp}// Обновляет это значение
                                         placeholder="— выберите —"
                                         options={[
                                             { value: '', label: '— выберите —' },
@@ -447,12 +451,12 @@ function App() {
                                         ]}
                                     />
                                 </div>
-
+                                {/* Блок выбора типа подключения к сети */}
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label>Тип подключения к сети:</label><br/>
                                     <CustomSelect
-                                        value={connectionType}
-                                        onChange={setConnectionType}
+                                        value={connectionType}// Текущий выбор типа подключения
+                                        onChange={setConnectionType}// Обновляет этот выбор
                                         placeholder="— выберите —"
                                         options={[
                                             { value: '', label: '— выберите —' },
@@ -467,7 +471,7 @@ function App() {
                                         <input
                                             type="checkbox"
                                             checked={isEmployee}
-                                            onChange={(e) => setIsEmployee(e.target.checked)}
+                                            onChange={(e) => setIsEmployee(e.target.checked)}// Обработчик изменения: обновляем состояние
                                             style={{ marginRight: '0.5rem' }}
                                         />
                                         Является сотрудником организации
@@ -523,14 +527,14 @@ function App() {
                         {screen === 'gis' && (
                             <>
                                 <h2 style={{ marginBottom: '1.5rem', textAlign: 'left' }}>Определение класса защищенности ГИС</h2>
-
+                                {/* Блок выбора уровня защищенности */}
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label>Уровень защищенности:</label><br />
                                     <CustomSelect
-                                        value={securityLevel}
-                                        onChange={setSecurityLevel}
-                                        placeholder="— выберите —"
-                                        options={[
+                                        value={securityLevel}// текущее выбранное значение
+                                        onChange={setSecurityLevel}// функция для обновления значения
+                                        placeholder="— выберите —"// плейсхолдер, если ничего не выбрано
+                                        options={[// варианты выбора
                                             { value: '', label: '— выберите —' },
                                             { value: '1', label: '1' },
                                             { value: '2', label: '2' },
@@ -538,12 +542,12 @@ function App() {
                                         ]}
                                     />
                                 </div>
-
+                                {/* Блок выбора масштаба ГИС */}
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label>Масштаб ГИС:</label><br />
                                     <CustomSelect
-                                        value={scale}
-                                        onChange={setScale}
+                                        value={scale}// текущее выбранное значение масштаба
+                                        onChange={setScale}// обновление выбранного масштаба
                                         placeholder="— выберите —"
                                         options={[
                                             { value: '', label: '— выберите —' },
@@ -553,7 +557,7 @@ function App() {
                                         ]}
                                     />
                                 </div>
-
+                                {/* Отображение ошибки, если errorGis существует */}
                                 {errorGis && (
                                     <div style={{ color: 'red', marginBottom: '1rem' }}>
                                         {errorGis}
