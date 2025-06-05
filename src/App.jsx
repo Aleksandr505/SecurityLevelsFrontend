@@ -167,7 +167,7 @@ function App() {
         setResultCode('');
 
         // Отправка POST-запроса на backend
-        const response = await fetch('http://localhost:8080/api/level', {
+        const response = await fetch('/api/level', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -245,7 +245,7 @@ function App() {
 
       try {
           // Отправка POST-запроса на backend
-          const response = await fetch('http://localhost:8080/api/gis', {
+          const response = await fetch('/api/gis', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({
