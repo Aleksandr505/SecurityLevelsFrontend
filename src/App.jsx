@@ -133,6 +133,7 @@ function App() {
   const [isEmployee, setIsEmployee] = useState(false);
   const [resultCode, setResultCode] = useState('');
   const [explanation, setExplanation] = useState('');
+  const [pdMeasures, setPdMeasures] = useState({});
   const [error, setError] = useState('');
 
   // ГИС состояния
@@ -166,7 +167,7 @@ function App() {
         setResultCode('');
 
         // Отправка POST-запроса на backend
-        const response = await fetch('/api/level', {
+        const response = await fetch('http://localhost:8080/api/level', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -185,6 +186,7 @@ function App() {
 
         setResultCode(data.maxLevel);
         setExplanation(data.reason);
+        setPdMeasures(data.measures || {});
       } catch (e) {
         setError(e.message || 'Ошибка при отправке запроса');
       }
@@ -231,6 +233,7 @@ function App() {
         setError('');
         setResultCode('');
         setExplanation('');
+        setPdMeasures('');
     };
 
   const handleGisContinue = async () => {
@@ -242,7 +245,7 @@ function App() {
 
       try {
           // Отправка POST-запроса на backend
-          const response = await fetch('/api/gis', {
+          const response = await fetch('http://localhost:8080/api/gis', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({
@@ -479,6 +482,25 @@ function App() {
                         {explanation && <p>{explanation}</p>}
                     </div>
                 )}
+
+                {Object.keys(pdMeasures).length > 0 && (
+                    <div>
+                        <h3>Требуемые меры защиты:</h3>
+                        {Object.entries(pdMeasures).map(([section, items]) => (
+                            <div key={section} style={{ marginBottom: '20px' }}>
+                                <h4>{section}</h4>
+                                <ul>
+                                    {items.map((item) => (
+                                        <li key={item.code}>
+                                            <strong>{item.code}:</strong> {item.text}
+                                            <br />
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         )}
 
@@ -589,7 +611,6 @@ function App() {
                                               <li key={item.code}>
                                                   <strong>{item.code}:</strong> {item.text}
                                                   <br />
-                                                  <em>Уровни: {item.levels.join(', ')}</em>
                                               </li>
                                           ))}
                                       </ul>
